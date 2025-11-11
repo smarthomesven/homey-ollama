@@ -113,25 +113,43 @@ module.exports = class OllamaApp extends Homey.App {
     });
   }
   async autocompleteModel(query) {
-       try {
-          const ollamaIp = await this.homey.settings.get('ip');
-          const ollamaPort = await this.homey.settings.get('port');
-          if (!ollamaIp || !ollamaPort) {
-            throw new Error('Ollama IP or port not set in settings. Please visit the app settings to connect to your Ollama instance.');
-          }
-          const ollamaUrl = `http://${ollamaIp}:${ollamaPort}`;
-          const response = await axios.get(`${ollamaUrl}/api/tags`);
-          const data = response.data;
-          const results = data.models.map(m => ({
-            name: m.model, // use only the model field
-            id: m.model     // id can also be the model name
-          }));
-          return results.filter(result =>
-            result.name.toLowerCase().includes(query.toLowerCase())
-          );
-        } catch (error) {
-          this.error('Error fetching models from Ollama:', error);
-          throw new Error('Error fetching models from Ollama: ' + error.message);
-        }
+    try {
+      const ollamaIp = await this.homey.settings.get('ip');
+      const ollamaPort = await this.homey.settings.get('port');
+      if (!ollamaIp || !ollamaPort) {
+        throw new Error('Ollama IP or port not set in settings. Please visit the app settings to connect to your Ollama instance.');
+      }
+      const ollamaUrl = `http://${ollamaIp}:${ollamaPort}`;
+      const response = await axios.get(`${ollamaUrl}/api/tags`);
+      const data = response.data;
+      const results = data.models.map(m => ({
+        name: m.model, // use only the model field
+        id: m.model     // id can also be the model name
+      }));
+      return results.filter(result =>
+        result.name.toLowerCase().includes(query.toLowerCase())
+      );
+    } catch (error) {
+      throw new Error('Error fetching models from Ollama: ' + error.message);
+    }
+  }
+  async checkOllama(body) {
+    try {
+      const ollamaIp = body.ip;
+      const ollamaPort = body.port;
+      if (!ollamaIp || !ollamaPort) {
+        throw new Error('Ollama IP or port not set in settings. Please visit the app settings to connect to your Ollama instance.');
+      }
+      const ollamaUrl = `http://${ollamaIp}:${ollamaPort}`;
+      const response = await axios.get(`${ollamaUrl}/`, { timeout: 5000 });
+      if (response.data === 'Ollama is running') {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      this.error('Error checking Ollama instance:', error);
+      return false;
+    }
   }
 };

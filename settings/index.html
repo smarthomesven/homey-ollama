@@ -41,8 +41,6 @@
     <script type="text/javascript">
       // a method named 'onHomeyReady' must be present in your code
       function onHomeyReady(Homey) {
-        // Tell Homey we're ready to be displayed
-        Homey.ready();
         // Define default elements
         const ipElement = document.getElementById("ip");
         const portElement = document.getElementById("port");
@@ -77,6 +75,7 @@
           if (!systemPrompt) return;
           promptElement.value = systemPrompt;
         });
+        Homey.ready();
         function setSave() {
           saveElement.className = 'homey-button-primary-full';
           saveElement.textContent = Homey.__('settings.save');

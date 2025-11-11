@@ -32,5 +32,12 @@
   },
   "bugs": {
     "url": "https://github.com/smarthomesven/homey-ollama/issues"
+  },
+  "api": {
+    "checkOllama": {
+      "method": "POST",
+      "path": "/check",
+      "public": true
+    }
   }
 }

@@ -43,5 +43,8 @@
   },
   "1.1.4": {
     "en": "Reduce settings page size"
+  },
+  "1.1.5": {
+    "en": "Update dependencies"
   }
 }

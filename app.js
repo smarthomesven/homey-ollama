@@ -123,8 +123,8 @@ module.exports = class OllamaApp extends Homey.App {
       const response = await axios.get(`${ollamaUrl}/api/tags`);
       const data = response.data;
       const results = data.models.map(m => ({
-        name: m.model, // use only the model field
-        id: m.model     // id can also be the model name
+        name: m.model,
+        id: m.model
       }));
       return results.filter(result =>
         result.name.toLowerCase().includes(query.toLowerCase())

@@ -52,5 +52,8 @@
   },
   "1.1.7": {
     "en": "Update dependencies"
+  },
+  "1.1.8": {
+    "en": "Added telemetry"
   }
 }

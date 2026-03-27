@@ -58,5 +58,8 @@
   },
   "1.1.9": {
     "en": "Improved settings page"
+  },
+  "1.1.10": {
+    "en": "Update dependencies"
   }
 }

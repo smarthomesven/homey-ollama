@@ -70,5 +70,8 @@
   },
   "1.1.13": {
     "en": "Update dependencies"
+  },
+  "1.1.14": {
+    "en": "Translation cleanup"
   }
 }

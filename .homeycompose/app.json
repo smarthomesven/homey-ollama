@@ -10,8 +10,7 @@
     "local"
   ],
   "name": {
-    "en": "Ollama",
-    "nl": "Ollama"
+    "en": "Ollama"
   },
   "description": {
     "en": "Use Local LLMs in your Flows",

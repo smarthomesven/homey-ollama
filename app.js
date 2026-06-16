@@ -13,6 +13,7 @@ module.exports = class OllamaApp extends Homey.App {
     const generateResponseCard = this.homey.flow.getActionCard("generate_response");
     const generateResponseImageCard = this.homey.flow.getActionCard("generate_response_image");
     const setSystemPromptCard = this.homey.flow.getActionCard("set_system_prompt");
+    const chatWidget = this.homey.dashboards.getWidget('chat');
     try {
       const portNumber = await this.homey.settings.get('port');
       if (portNumber && (portNumber < 1 || portNumber > 65535)) {
@@ -25,6 +26,9 @@ module.exports = class OllamaApp extends Homey.App {
       "model",
       async (query, args) => this.autocompleteModel(query));
     generateResponseImageCard.registerArgumentAutocompleteListener(
+      "model",
+      async (query, args) => this.autocompleteModel(query));
+    chatWidget.registerSettingAutocompleteListener(
       "model",
       async (query, args) => this.autocompleteModel(query));
     generateResponseCard.registerRunListener(async (args, state) => {
@@ -116,6 +120,73 @@ module.exports = class OllamaApp extends Homey.App {
     } catch (error) {
       this.error('Error in onInit:', error.message);
     }
+  }
+  async getModels() {
+    const ollamaIp = await this.homey.settings.get('ip');
+    const ollamaPort = await this.homey.settings.get('port');
+    if (!ollamaIp || !ollamaPort) throw new Error('Ollama IP or port not configured.');
+    const ollamaUrl = `http://${ollamaIp}:${ollamaPort}`;
+    const response = await axios.get(`${ollamaUrl}/api/tags`);
+    return response.data.models.map(m => ({ name: m.model, id: m.model }));
+  }
+  async streamChat(instanceId, messages) {
+    const ollamaIp = await this.homey.settings.get('ip');
+    const ollamaPort = await this.homey.settings.get('port');
+    const systemPrompt = await this.homey.settings.get('systemPrompt');
+
+    if (!ollamaIp || !ollamaPort) throw new Error('Ollama IP or port not configured.');
+
+    // Resolve model: prefer widget instance setting, fall back to last used or first available
+    let model = null;
+    try {
+      const models = await this.getModels();
+      if (models.length > 0) model = models[0].id;
+    } catch (_) {}
+
+    const ollamaUrl = `http://${ollamaIp}:${ollamaPort}`;
+
+    const payload = {
+      model: model || 'llama3.2:latest',
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt || 'You are a helpful assistant for Homey smart home.',
+        },
+        ...messages,
+      ],
+      stream: true,
+    };
+
+    const response = await axios.post(`${ollamaUrl}/api/chat`, payload, {
+      responseType: 'stream',
+    });
+
+    // Emit start so the widget can show the bubble immediately
+    await this.homey.api.realtime(`chat:start:${instanceId}`, {});
+
+    let buffer = '';
+
+    await new Promise((resolve, reject) => {
+      response.data.on('data', chunk => {
+        // Ollama streams newline-delimited JSON
+        const lines = chunk.toString().split('\n').filter(Boolean);
+        for (const line of lines) {
+          try {
+            const parsed = JSON.parse(line);
+            const token = parsed?.message?.content ?? '';
+            if (token) {
+              buffer += token;
+              this.homey.api.realtime(`chat:token:${instanceId}`, { token }).catch(() => {});
+            }
+            if (parsed.done) {
+              this.homey.api.realtime(`chat:done:${instanceId}`, { fullText: buffer }).catch(() => {});
+            }
+          } catch (_) {}
+        }
+      });
+      response.data.on('end', resolve);
+      response.data.on('error', reject);
+    });
   }
   async getImageBase64(image) {
     const stream = await image.getStream();

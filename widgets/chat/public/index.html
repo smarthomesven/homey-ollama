@@ -1,0 +1,425 @@
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f5f5f3;
+    --bg-info: #e6f1fb;
+    --text: #1a1a18;
+    --text-secondary: #6b6b68;
+    --text-info: #185fa5;
+    --border: rgba(0,0,0,0.12);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --font: system-ui, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1e1c;
+      --bg-secondary: #2a2a28;
+      --bg-info: #0c3a60;
+      --text: #f0efe8;
+      --text-secondary: #9a9994;
+      --text-info: #85b7eb;
+      --border: rgba(255,255,255,0.12);
+    }
+  }
+
+  html, body {
+    height: 100%;
+    font-family: var(--font);
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+  }
+
+  #root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+
+  #model-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-bottom: 0.5px solid var(--border);
+    background: var(--bg-secondary);
+    flex-shrink: 0;
+  }
+
+  #model-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-info);
+    background: var(--bg-info);
+    border-radius: 99px;
+    padding: 2px 10px;
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #model-icon {
+    font-size: 15px;
+    color: var(--text-secondary);
+  }
+
+  #model-status {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    scroll-behavior: smooth;
+  }
+
+  .msg {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    max-width: 84%;
+  }
+
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.assistant { align-self: flex-start; align-items: flex-start; }
+
+  .msg-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    padding: 0 4px;
+  }
+
+  .bubble {
+    padding: 8px 12px;
+    line-height: 1.5;
+    border-radius: var(--radius-lg);
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
+
+  .msg.user .bubble {
+    background: var(--bg-info);
+    color: var(--text-info);
+    border-bottom-right-radius: 3px;
+  }
+
+  .msg.assistant .bubble {
+    background: var(--bg-secondary);
+    color: var(--text);
+    border-bottom-left-radius: 3px;
+    border: 0.5px solid var(--border);
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 7px;
+    height: 13px;
+    background: var(--text-secondary);
+    vertical-align: -2px;
+    border-radius: 1px;
+    margin-left: 1px;
+    animation: blink 0.85s step-end infinite;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  #input-row {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px;
+    border-top: 0.5px solid var(--border);
+    align-items: flex-end;
+    flex-shrink: 0;
+    background: var(--bg);
+  }
+
+  #user-input {
+    flex: 1;
+    resize: none;
+    font-size: 14px;
+    font-family: var(--font);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 8px 10px;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.45;
+    min-height: 36px;
+    max-height: 96px;
+    overflow-y: auto;
+  }
+
+  #user-input:focus {
+    outline: none;
+    border-color: rgba(0,0,0,0.3);
+  }
+
+  #send-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    border: 0.5px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.1s;
+  }
+
+  #send-btn:hover { background: var(--bg-secondary); }
+  #send-btn:disabled { opacity: 0.35; cursor: default; }
+
+  #send-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .error-msg {
+    font-size: 12px;
+    color: #a32d2d;
+    padding: 4px 14px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div id="root" style="position:relative;">
+  <div id="model-bar">
+    <!--<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-secondary);flex-shrink:0" aria-hidden="true">
+      <path d="M12 2a4 4 0 0 1 4 4v1h1a3 3 0 0 1 0 6h-1v1a4 4 0 0 1-8 0v-1H7a3 3 0 0 1 0-6h1V6a4 4 0 0 1 4-4z"/>
+      <circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/>
+    </svg>-->
+    <span id="model-label">Loading…</span>
+    <!--<span id="model-status">Ollama</span>-->
+    <button id="clear-btn" aria-label="Clear chat" title="Clear chat" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:2px;display:flex;align-items:center;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+      </svg>
+    </button>
+  </div>
+
+  <div id="messages"></div>
+  <div id="scroll-btns" style="display:none;position:absolute;right:10px;bottom:60px;display:flex;flex-direction:column;gap:4px;">
+  <button id="scroll-up" aria-label="Scroll up" style="width:28px;height:28px;border-radius:var(--radius-md);border:0.5px solid var(--border);background:var(--bg);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0.85;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>
+  </button>
+  <button id="scroll-down" aria-label="Scroll down" style="width:28px;height:28px;border-radius:var(--radius-md);border:0.5px solid var(--border);background:var(--bg);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0.85;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+</div>
+
+  <div id="input-row">
+    <textarea id="user-input" rows="1" placeholder="Message Ollama…"></textarea>
+    <button id="send-btn" aria-label="Send message" disabled>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <line x1="22" y1="2" x2="11" y2="13"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+function onHomeyReady(Homey) {
+  // Homey specific
+  const instanceId = Homey.getWidgetInstanceId();
+  const settings = Homey.getSettings();
+
+  //elements
+  const messagesEl = document.getElementById('messages');
+  const inputEl = document.getElementById('user-input');
+  const sendBtn = document.getElementById('send-btn');
+  const modelLabel = document.getElementById('model-label');
+  const clearEl = document.getElementById('clear-btn');
+  const scrollUpBtn = document.getElementById('scroll-up');
+  const scrollDownBtn = document.getElementById('scroll-down');
+  const scrollBtns = document.getElementById('scroll-btns');
+
+  // Conversation history sent to the backend on each turn
+  const history = [];
+  let isStreaming = false;
+  let generation = 0;
+  let activeModel = settings.model.id || 'gemma3:4b';
+
+  // scroll buttons
+  const SCROLL_STEP = 120;
+
+  // --- Height ---
+  Homey.ready({ height: 500 });
+
+
+  // --- Load models & resolve active model ---
+  Homey.api('GET', '/models', {})
+    .then(models => {
+      if (!activeModel && models.length > 0) activeModel = models[0].id;
+      modelLabel.textContent = activeModel || 'No model';
+      sendBtn.disabled = false;
+    })
+    .catch(() => {
+      modelLabel.textContent = settings.model.id || 'gemma3:4b';
+      sendBtn.disabled = false;
+    });
+
+  // --- DOM helpers ---
+
+  function appendMessage(role, text) {
+    const wrap = document.createElement('div');
+    wrap.className = `msg ${role}`;
+
+    const label = document.createElement('span');
+    label.className = 'msg-label';
+    label.textContent = role === 'user' ? 'You' : 'Ollama';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+
+    wrap.appendChild(label);
+    wrap.appendChild(bubble);
+    messagesEl.appendChild(wrap);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return bubble;
+  }
+
+  function renderMarkdown(text) {
+    return text
+      .split('\n')
+      .map(line => line.startsWith('* ') ? '• ' + line.slice(2) : line)
+      .join('\n')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  }
+
+  function updateScrollBtns() {
+    const el = messagesEl;
+    const canScroll = el.scrollHeight > el.clientHeight;
+    scrollBtns.style.display = canScroll ? 'flex' : 'none';
+    scrollUpBtn.style.opacity = el.scrollTop > 0 ? '1' : '0.3';
+    scrollDownBtn.style.opacity = el.scrollTop + el.clientHeight < el.scrollHeight - 2 ? '1' : '0.3';
+  }
+
+  function appendStreamingBubble() {
+    const wrap = document.createElement('div');
+    wrap.className = 'msg assistant';
+
+    const label = document.createElement('span');
+    label.className = 'msg-label';
+    label.textContent = 'Ollama';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.innerHTML = '<span class="cursor"></span>';
+
+    wrap.appendChild(label);
+    wrap.appendChild(bubble);
+    messagesEl.appendChild(wrap);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return bubble;
+  }
+
+  // --- Send ---
+  function send() {
+    const text = inputEl.value.trim();
+    if (!text || isStreaming) return;
+
+    isStreaming = true;
+    sendBtn.disabled = true;
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+
+    history.push({ role: 'user', content: text });
+    appendMessage('user', text);
+    updateScrollBtns();
+
+    const bubble = appendStreamingBubble();
+    let accumulated = '';
+    const myGen = ++generation;
+
+
+    // Listen for streaming events scoped to this widget instance
+    Homey.on(`chat:token:${instanceId}`, ({ token }) => {
+      if (myGen !== generation) return;
+      accumulated += token;
+      bubble.innerHTML = renderMarkdown(accumulated) + '<span class="cursor"></span>';
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      updateScrollBtns();
+    });
+
+    Homey.on(`chat:done:${instanceId}`, ({ fullText }) => {
+      if (myGen !== generation) return;
+      bubble.textContent = fullText || accumulated;
+      bubble.innerHTML = renderMarkdown(fullText || accumulated);
+      history.push({ role: 'assistant', content: fullText || accumulated });
+      isStreaming = false;
+      sendBtn.disabled = false;
+      inputEl.focus();
+      updateScrollBtns();
+    });
+
+    // Kick off the stream
+    Homey.api('POST', '/chat', { messages: history, instanceId })
+      .catch(err => {
+        if (myGen !== generation) return;
+        bubble.textContent = 'Error: ' + (err.message || 'Unknown error');
+        isStreaming = false;
+        sendBtn.disabled = false;
+      });
+  }
+
+  // --- Input behaviour ---
+  inputEl.addEventListener('input', () => {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+  });
+
+  clearEl.addEventListener('click', () => {
+    if (isStreaming) return;
+    history.length = 0;
+    messagesEl.innerHTML = '';
+    updateScrollBtns();
+  });
+
+  inputEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  });
+
+  scrollUpBtn.addEventListener('click', () => {
+    messagesEl.scrollBy({ top: -SCROLL_STEP, behavior: 'smooth' });
+  });
+
+  scrollDownBtn.addEventListener('click', () => {
+    messagesEl.scrollBy({ top: SCROLL_STEP, behavior: 'smooth' });
+  });
+
+  messagesEl.addEventListener('scroll', updateScrollBtns);
+
+  sendBtn.addEventListener('click', send);
+}
+</script>
+</body>
+</html>

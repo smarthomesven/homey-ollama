@@ -1,0 +1,21 @@
+{
+  "name": {
+    "en": "Chat"
+  },
+  "height": 500,
+  "settings": [
+    {
+      "id": "model",
+      "type": "autocomplete",
+      "title": {
+        "en": "Model"
+      }
+    }
+  ],
+  "api": {
+    "chat": {
+      "method": "POST",
+      "path": "/chat"
+    }
+  }
+}

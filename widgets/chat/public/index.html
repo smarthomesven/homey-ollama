@@ -304,13 +304,56 @@ function onHomeyReady(Homey) {
     return bubble;
   }
 
-  function renderMarkdown(text) {
+  function escapeHtml(text) {
     return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function renderMarkdown(text) {
+    const codeBlocks = [];
+    const codeSpans = [];
+
+    const withoutBlocks = text.replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) => {
+      codeBlocks.push(code);
+      return `\x00BLOCK${codeBlocks.length - 1}\x00`;
+    });
+
+    const withPlaceholders = withoutBlocks.replace(/`([^`]+)`/g, (_, code) => {
+      codeSpans.push(code);
+      return `\x00CODE${codeSpans.length - 1}\x00`;
+    });
+
+    const processed = escapeHtml(withPlaceholders)
       .split('\n')
-      .map(line => line.startsWith('* ') ? '• ' + line.slice(2) : line)
+      .map(line => {
+        const indent = line.match(/^(\s+)/)?.[1]?.length || 0;
+        const level = Math.floor(indent / 2);
+        const bullets = ['•', '◦', '▪'];
+        const bullet = bullets[Math.min(level, bullets.length - 1)];
+        const spacer = '&nbsp;&nbsp;'.repeat(level);
+        if (/^\s*[\*\+\-] /.test(line)) return spacer + bullet + ' ' + line.replace(/^\s*[\*\+\-] /, '');
+        return line;
+      })
       .join('\n')
+      .replace(/^#### (.+)$/gm, '<h4 style="font-size:0.85em;font-weight:600;margin:4px 0 2px;">$1</h4>')
+      .replace(/^### (.+)$/gm, '<h3 style="font-size:0.95em;font-weight:600;margin:4px 0 2px;">$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2 style="font-size:1.05em;font-weight:700;margin:6px 0 2px;">$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1 style="font-size:1.15em;font-weight:700;margin:6px 0 2px;">$1</h1>')
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>');
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/_(.*?)_/g, '<em>$1</em>')
+      .replace(/~~(.*?)~~/g, '<s>$1</s>');
+    const withBlocks = processed.replace(/\x00BLOCK(\d+)\x00/g, (_, i) => {
+      return `<pre style="font-family:monospace;background:var(--bg-secondary);border:0.5px solid var(--border);border-radius:var(--radius-md);padding:8px 10px;font-size:0.85em;white-space:pre-wrap;word-break:break-all;">${escapeHtml(codeBlocks[i])}</pre>`;
+    });
+
+    // Substitute inline code spans back in
+    return withBlocks.replace(/\x00CODE(\d+)\x00/g, (_, i) => {
+      return `<code style="font-family:monospace;background:var(--bg);border:0.5px solid var(--border);border-radius:4px;padding:1px 5px;font-size:0.9em;">${escapeHtml(codeSpans[i])}</code>`;
+    });
   }
 
   function updateScrollBtns() {

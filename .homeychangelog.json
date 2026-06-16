@@ -85,5 +85,8 @@
   },
   "1.2.1": {
     "en": "Added support for italic text in the chat widget"
+  },
+  "1.2.2": {
+    "en": "Improved Markdown parser: added headers, improved italic text detection, added nested bullet points support, added code blocks and added strikethrough text"
   }
 }

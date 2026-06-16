@@ -82,5 +82,8 @@
   },
   "1.2.0": {
     "en": "NEW: Chat Widget! Chat with any Ollama model straight from your Dashboards."
+  },
+  "1.2.1": {
+    "en": "Added support for italic text in the chat widget"
   }
 }

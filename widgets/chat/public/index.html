@@ -309,7 +309,8 @@ function onHomeyReady(Homey) {
       .split('\n')
       .map(line => line.startsWith('* ') ? '• ' + line.slice(2) : line)
       .join('\n')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>');
   }
 
   function updateScrollBtns() {

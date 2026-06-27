@@ -88,5 +88,8 @@
   },
   "1.2.2": {
     "en": "Improved Markdown parser: added headers, improved italic text detection, added nested bullet points support, added code blocks and added strikethrough text"
+  },
+  "1.2.3": {
+    "en": "Update dependencies"
   }
 }

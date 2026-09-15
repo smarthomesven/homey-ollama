@@ -6,3 +6,5 @@ FEATURES:
 - Ondersteunt het verzenden van berichten met afbeeldingen naar vision-modellen zoals qwen2.5vl
 
 Gebruik bijvoorbeeld een vision-model zoals qwen2.5vl of gemma3 om je camera-opnamen te analyseren of gebruik een groter model zoals gpt-oss of mistral voor gedetailleerde antwoorden.
+
+Privacybeleid: https://homey-privacy.vercel.app/?app=com.ollama

@@ -6,3 +6,5 @@ FEATURES:
 - Supports sending messages with images to vision models like qwen2.5vl
 
 For example, use a vision model like qwen2.5vl or gemma3 to analyze your camera snapshots or use a larger model like gpt-oss or mistral for detailed responses.
+
+Privacy Policy: https://homey-privacy.vercel.app/?app=com.ollama

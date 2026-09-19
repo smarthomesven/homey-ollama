@@ -100,5 +100,8 @@
   },
   "1.2.7": {
     "en": "Added privacy policy"
+  },
+  "1.2.8": {
+    "en": "Removed privacy policy, not applicable to this app"
   }
 }

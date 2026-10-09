@@ -103,5 +103,8 @@
   },
   "1.2.8": {
     "en": "Removed privacy policy, not applicable to this app"
+  },
+  "1.2.9": {
+    "en": "Update dependencies"
   }
 }

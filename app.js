@@ -2,6 +2,7 @@
 
 const Homey = require('homey');
 const axios = require('axios');
+const HomeyPush = require('./lib/push');
 
 module.exports = class OllamaApp extends Homey.App {
 
@@ -10,6 +11,8 @@ module.exports = class OllamaApp extends Homey.App {
    */
   async onInit() {
     this.log('Ollama has been initialized');
+    this.push = new HomeyPush(this);
+    await this.push.startPush();
     const generateResponseCard = this.homey.flow.getActionCard("generate_response");
     const generateResponseImageCard = this.homey.flow.getActionCard("generate_response_image");
     const setSystemPromptCard = this.homey.flow.getActionCard("set_system_prompt");
@@ -215,6 +218,12 @@ module.exports = class OllamaApp extends Homey.App {
       );
     } catch (error) {
       throw new Error('Error fetching models from Ollama: ' + error.message);
+    }
+  }
+
+  async onUninit() {
+    if (this.push) {
+      this.push.stopPush();
     }
   }
 };
